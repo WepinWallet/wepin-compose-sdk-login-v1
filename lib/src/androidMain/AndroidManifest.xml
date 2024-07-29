@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.wepin.cm.loginlib">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <activity
+            android:name=".RedirectUriReceiverActivity"
+            android:screenOrientation="behind"
+            android:exported="true" />
+        <activity
+            android:name=".WepinLoginMainActivity"
+            android:screenOrientation="behind"
+            android:exported="true" />
+        <activity
+            android:name="net.openid.appauth.RedirectUriReceiverActivity"
+            android:screenOrientation="behind"
+            android:exported="true" />
+    </application>
+</manifest>
