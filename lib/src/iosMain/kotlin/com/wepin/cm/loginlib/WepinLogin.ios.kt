@@ -1,7 +1,5 @@
 package com.wepin.cm.loginlib
 
-import com.wepin.cm.loginlib.const.AppAuthConst
-import com.wepin.cm.loginlib.const.RegExpConst
 import com.wepin.cm.loginlib.error.WepinError
 import com.wepin.cm.loginlib.manager.WepinLoginManager
 import com.wepin.cm.loginlib.network.WepinNetworkManager
@@ -18,15 +16,16 @@ import com.wepin.cm.loginlib.types.WepinUser
 import com.wepin.cm.loginlib.types.network.CheckEmailExistResponse
 import com.wepin.cm.loginlib.types.network.LoginOauthAccessTokenRequest
 import com.wepin.cm.loginlib.types.network.LoginOauthIdTokenRequest
-
 import platform.AuthenticationServices.*
 import cocoapods.AppAuth.*
 import cocoapods.secp256k1.*
 import com.wepin.cm.loginlib.network.KtorWepinClient.closeAllClients
 import com.wepin.cm.loginlib.types.OAuthTokenRequest
 import com.wepin.cm.loginlib.types.OauthTokenType
+import com.wepin.cm.loginlib.types.network.LoginOauthIdTokenResponse
 import com.wepin.cm.loginlib.types.network.firebase.GetRefreshIdTokenRequest
 import com.wepin.cm.loginlib.utils.customURLEncode
+import io.ktor.util.InternalAPI
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UByteVar
 import kotlinx.cinterop.addressOf
@@ -38,7 +37,9 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.refTo
 import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import platform.CoreCrypto.CC_SHA256
 import platform.Foundation.NSBundle
 import platform.Foundation.NSURL
@@ -53,7 +54,7 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
     private var _appKey: String? = wepinLoginOptions.appKey
     private var _wepinLoginManager: WepinLoginManager = WepinLoginManager.getInstance()
     private var _wepinNetworkManager: WepinNetworkManager? = null
-    private val viewController: UIViewController? = wepinLoginOptions.context as UIViewController
+    private val viewController: UIViewController = wepinLoginOptions.context as UIViewController
 
     actual suspend fun init(): Boolean {
         if (_isInitialized) {
@@ -61,12 +62,15 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
         }
 
         val packageName = NSBundle.mainBundle.bundleIdentifier ?: ""
-
         _wepinLoginManager.init(_appKey!!, _appId!!, packageName)
         _wepinNetworkManager = _wepinLoginManager.wepinNetworkManager
 
         val firebaseKey = _wepinNetworkManager!!.getFirebaseConfig()
         _wepinLoginManager.setFirebase(firebaseKey)
+
+        val providerList = _wepinNetworkManager!!.getOAuthProviderInfo()
+        _wepinLoginManager.setOAuthProviderInfoList(providerList)
+        _wepinLoginManager.regex = _wepinNetworkManager!!.getRegex()
 
         StorageManager.init("null", _appId!!)
         StorageManager.deleteAllIfAppIdDataNotExists()
@@ -85,11 +89,11 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
             throw WepinError.NOT_INITIALIZED_ERROR
         }
 
-        if (params.email.isEmpty() || !RegExpConst.validateEmail(email = params.email)) {
+        if (params.email.isEmpty() || !_wepinLoginManager.regex!!.validateEmail(email = params.email)) {
             throw WepinError.INCORRECT_EMAIL_FORM
         }
 
-        if (params.password.isEmpty() || !RegExpConst.validatePassword(password = params.password)) {
+        if (params.password.isEmpty() || !_wepinLoginManager.regex!!.validatePassword(password = params.password)) {
             throw WepinError.INCORRECT_PASSWORD_FORM
         }
         val checkEmailResponse: CheckEmailExistResponse?
@@ -119,12 +123,13 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
     }
 
     actual fun finalize() {
-        StorageManager.deleteAllStorage()
+        _wepinNetworkManager?.clearAuthToken()
+        StorageManager.deleteAllStorageWithAppId()
         closeAllClients()
         _isInitialized = false
     }
 
-    @OptIn(ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class, InternalAPI::class)
     actual suspend fun loginWithOauthProvider(params: LoginOauth2Params): LoginOauthResult {
         if (!_isInitialized) {
             throw WepinError.NOT_INITIALIZED_ERROR
@@ -134,8 +139,13 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
             throw WepinError.INVALID_LOGIN_PROVIDER
         }
 
-        val authorizationEndpoint = AppAuthConst.getAuthorizationEndpoint(params.provider)
-        val tokenEndpoint = AppAuthConst.getTokenEndpoint(params.provider)
+        //clear session
+        _wepinNetworkManager?.clearAuthToken()
+        StorageManager.deleteAllStorageWithAppId()
+
+        val providerInfo = _wepinLoginManager.getOAuthProviderInfo(params.provider)
+        val authorizationEndpoint = NSURL(string = providerInfo.authorizationEndpoint)
+        val tokenEndpoint = NSURL(string = providerInfo.tokenEndpoint)
         val configuration =
             OIDServiceConfiguration(authorizationEndpoint as NSURL, tokenEndpoint as NSURL)
 
@@ -158,9 +168,10 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
                 responseType = OIDResponseTypeCode.toString(),
                 additionalParameters = additParams.toMap()
             )
+        val presentationContextProvider = withContext(Dispatchers.Main) {
+            WepinPresentationContextProvider(viewController.view.window)
+        }
 
-        val presentationContextProvider =
-            WepinPresentationContextProvider(viewController!!.view.window)
         val requestUrl = request.externalUserAgentRequestURL().toString()
         val replaceUrl = requestUrl.replace(
             _wepinLoginManager.appAuthBaseUrl,
@@ -202,7 +213,7 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
                     return LoginOauthResult(
                         provider = params.provider,
                         token = tokenResponse!!.accessToken ?: "",
-                        type = OauthTokenType.ID_TOKEN
+                        type = OauthTokenType.ACCESS_TOKEN
                     )
                 } catch (error: Exception) {
                     throw error
@@ -362,7 +373,8 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
             throw WepinError.INVALID_LOGIN_PROVIDER
         }
 
-        StorageManager.deleteAllStorage()
+        _wepinNetworkManager?.clearAuthToken()
+        StorageManager.deleteAllStorageWithAppId()
         val loginResponse = _wepinNetworkManager?.loginOAuthAccessToken(params)
         if (loginResponse!!.token !== null) {
             if (loginResponse != null) {
@@ -384,10 +396,11 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
         if (!_isInitialized) {
             throw WepinError.NOT_INITIALIZED_ERROR
         }
-        StorageManager.deleteAllStorage()
         if (_wepinNetworkManager == null) {
             throw WepinError.NOT_INITIALIZED_NETWORK
         }
+        _wepinNetworkManager?.clearAuthToken()
+        StorageManager.deleteAllStorageWithAppId()
         val loginResponse = _wepinNetworkManager?.loginOAuthIdToken(params)
         try {
             if (loginResponse!!.token !== null) {
@@ -406,6 +419,7 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
     private suspend fun checkExistWepinLoginSession(): Boolean {
         val token = StorageManager.getStorage("wepin:connectUser")
         val userId = StorageManager.getStorage("user_id")
+
         if (token != null && userId != null) {
             _wepinNetworkManager?.setAuthToken(
                 (token as StorageDataType.WepinToken).accessToken,
@@ -417,11 +431,11 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
                 StorageManager.setStorage(
                     "wepin:connectUser",
                     StorageDataType.WepinToken(
-                        accessToken = accessToken!!,
+                        accessToken = accessToken!!.token,
                         refreshToken = (token as StorageDataType.WepinToken).refreshToken,
                     ),
                 )
-                _wepinNetworkManager?.setAuthToken(accessToken, token.refreshToken)
+                _wepinNetworkManager?.setAuthToken(accessToken.token, token.refreshToken)
                 return true
             } catch (e: Exception) {
                 _wepinNetworkManager?.clearAuthToken()
@@ -435,29 +449,23 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
         }
     }
 
-    actual suspend fun loginWepin(params: LoginResult?): WepinUser {
+    actual suspend fun loginWepin(params: LoginResult): WepinUser? {
         if (!_isInitialized) {
             throw WepinError.NOT_INITIALIZED_ERROR
         }
 
-        if (params == null) {
-            checkExistWepinLoginSession()
-            val wepinUser = StorageManager.getWepinUser()
-            if (wepinUser != null) {
-                return wepinUser
-            } else {
-                throw WepinError.NOT_INITIALIZED_ERROR
-            }
-        }
         if (params.token.idToken.isEmpty() || params.token.refreshToken.isEmpty()) {
             throw WepinError.INVALID_PARAMETER
+        }
+
+        if (_wepinNetworkManager == null || _wepinLoginManager.wepinFirebaseManager == null) {
+            throw WepinError.NOT_INITIALIZED_ERROR
         }
 
         try {
             val loginResponse = _wepinLoginManager.wepinNetworkManager?.login(params.token.idToken)
             StorageManager.setWepinUser(params, loginResponse!!)
-            val wepinUser = StorageManager.getWepinUser()
-            return wepinUser!!
+            return StorageManager.getWepinUser()
         } catch (e: Exception) {
             throw WepinError(e.message)
         }
@@ -472,7 +480,7 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
 
         try {
             val loginResponse = _wepinLoginManager.wepinNetworkManager?.logout(userId as String)
-            StorageManager.deleteAllStorage()
+            StorageManager.deleteAllStorageWithAppId()
             return loginResponse!!
         } catch (error: Exception) {
             throw error
@@ -486,12 +494,15 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
         if (_wepinNetworkManager == null) {
             throw WepinError.NOT_INITIALIZED_NETWORK
         }
+        //clear session
+        _wepinNetworkManager?.clearAuthToken()
+        StorageManager.deleteAllStorageWithAppId()
 
-        if (params.email.isEmpty() || !RegExpConst.validateEmail(email = params.email)) {
+        if (params.email.isEmpty() || !_wepinLoginManager.regex!!.validateEmail(email = params.email)) {
             throw WepinError.INCORRECT_EMAIL_FORM
         }
 
-        if (params.password.isEmpty() || !RegExpConst.validatePassword(password = params.password)) {
+        if (params.password.isEmpty() || !_wepinLoginManager.regex!!.validatePassword(password = params.password)) {
             throw WepinError.INCORRECT_PASSWORD_FORM
         }
 
@@ -547,16 +558,63 @@ actual class WepinLogin actual constructor(wepinLoginOptions: WepinLoginOptions)
         }
     }
 
-    actual suspend fun getCurrentWepinUser(): WepinUser {
+    actual suspend fun getCurrentWepinUser(): WepinUser? {
         if (!_isInitialized) {
             throw WepinError.NOT_INITIALIZED_ERROR
         }
         checkExistWepinLoginSession()
-        val wepinUser = StorageManager.getWepinUser()
-        if (wepinUser != null) {
-            return wepinUser
-        } else {
-            throw WepinError.INVALID_LOGIN_SESSION
-        }
+        return StorageManager.getWepinUser()
     }
+
+    actual suspend fun loginFirebaseWithOauthProvider(params: LoginOauth2Params): LoginResult? {
+        var oauthRes: LoginOauthResult? = null
+        try {
+            oauthRes = loginWithOauthProvider(params)
+        } catch(error: Exception) {
+            if (error is WepinError) {
+                throw error
+            } else {
+                throw WepinError(WepinError.FAILED_LOGIN.code, "failed oauth login")
+            }
+        }
+        //clear session
+        _wepinNetworkManager?.clearAuthToken()
+        StorageManager.deleteAllStorageWithAppId()
+
+        var res: LoginOauthIdTokenResponse? = null
+
+        if (oauthRes.type == OauthTokenType.ID_TOKEN) {
+            val loginOauthRequest = LoginOauthIdTokenRequest(idToken = oauthRes.token)
+            val result = _wepinNetworkManager?.loginOAuthIdToken(loginOauthRequest)
+            res = result
+        } else {
+            val loginOauthRequest = LoginOauthAccessTokenRequest(provider = params.provider, accessToken = oauthRes.token)
+            res = _wepinNetworkManager?.loginOAuthAccessToken((loginOauthRequest))
+        }
+        return _wepinLoginManager.loginHelper?.doFirebaseLoginWithCustomToken(res?.token!!, Providers.fromValue(params.provider)!!)
+    }
+
+    actual suspend fun loginWepinWithOauthProvider(params: LoginOauth2Params): WepinUser? {
+        val firebaseRes = loginFirebaseWithOauthProvider(params)
+        if (firebaseRes == null) {
+            throw WepinError(WepinError.FAILED_LOGIN.code, "failed oauth firebase login")
+        }
+        return loginWepin(firebaseRes)
+    }
+
+    actual suspend fun loginWepinWithIdToken(params: LoginOauthIdTokenRequest): WepinUser? {
+        val firebaseRes = loginWithIdToken(params)
+        return loginWepin(firebaseRes)
+    }
+
+    actual suspend fun loginWepinWithAccessToken(params: LoginOauthAccessTokenRequest): WepinUser? {
+        val firebaseRes = loginWithAccessToken(params)
+        return loginWepin(firebaseRes)
+    }
+
+    actual suspend fun loginWepinWithEmailAndPassword(params: LoginWithEmailParams): WepinUser? {
+        val firebaseRes = loginWithEmailAndPassword(params)
+        return loginWepin(firebaseRes)
+    }
+
 }

@@ -42,7 +42,7 @@ actual object StorageManager {
         refreshToken: String,
         providers: Providers,
     ) {
-        deleteAllStorage()
+        deleteAllStorageWithAppId()
         setStorage(
             "firebase:wepin",
             StorageDataType.FirebaseWepin(
@@ -57,7 +57,7 @@ actual object StorageManager {
         request: LoginResult,
         response: LoginResponse,
     ) {
-        deleteAllStorage()
+        deleteAllStorageWithAppId()
         setStorage(
             "firebase:wepin",
             StorageDataType.FirebaseWepin(
@@ -211,6 +211,22 @@ actual object StorageManager {
         val settings = KeychainSettings("$PREFERENCE_NAME$_appId")
         settings.keys.forEach { key ->
             settings.remove(key)
+        }
+    }
+
+    actual fun getAllStorage(): Map<String, Any?> {
+        val settings = KeychainSettings("$PREFERENCE_NAME$_appId")
+        val storages: MutableMap<String, Any?> = mutableMapOf()
+        settings.keys.forEach { key ->
+            storages.put(key, getStorage(key))
+        }
+
+        return storages
+    }
+
+    actual fun setAllStorage(data: Map<String, Any>) {
+        data.forEach { (key, value) ->
+            setStorage(key, value)
         }
     }
 }

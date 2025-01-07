@@ -7,11 +7,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
-import com.wepin.cm.loginlib.const.AppAuthConst
 import com.wepin.cm.loginlib.error.WepinError
 import com.wepin.cm.loginlib.manager.WepinLoginManager
 import com.wepin.cm.loginlib.types.ErrorCode
-import com.wepin.cm.loginlib.types.LoginOauthResult
+import com.wepin.cm.loginlib.types.OAuthProviderInfo
 import com.wepin.cm.loginlib.types.OauthTokenParam
 import com.wepin.cm.loginlib.types.WepinLoginError
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -37,6 +36,7 @@ internal class WepinLoginMainActivity : ComponentActivity() {
     private var provider: String? = null
     private var clientId: String? = null
     private var token: String? = null
+    private var providerInfo: OAuthProviderInfo? = null
 //    private lateinit var resultLauncher: ActivityResultLauncher<Intent>
 
 //    private var jwt : JWT? = null
@@ -49,6 +49,7 @@ internal class WepinLoginMainActivity : ComponentActivity() {
             setContentView(R.layout.activity_wepin_login_main)
             val bundle = intent.extras
             provider = bundle?.getString("provider").toString()
+            providerInfo = wepinLoginManager.getOAuthProviderInfo(provider!!)
             clientId = bundle?.getString("clientId").toString()
             redirectUri = Uri.parse(wepinLoginManager.appAuthRedirectUrl)
             processLoginOauth2(provider!!, clientId!!)
@@ -62,8 +63,8 @@ internal class WepinLoginMainActivity : ComponentActivity() {
         provider: String,
         clientId: String,
     )  {
-        val authUri = AppAuthConst.getAuthorizationEndpoint(provider) as Uri
-        val tokenUri = AppAuthConst.getTokenEndpoint(provider) as Uri
+        val authUri = Uri.parse(providerInfo!!.authorizationEndpoint)
+        val tokenUri = Uri.parse(providerInfo!!.tokenEndpoint)
 
         val serviceConfig =
             AuthorizationServiceConfiguration(
@@ -95,11 +96,11 @@ internal class WepinLoginMainActivity : ComponentActivity() {
         // apple의 경우, scope에 email을 추가하면 response mode를 POST 로 해줘야 함!!!
         if (provider == "apple") builder.setResponseMode("form_post")
 
-        if (provider == "discord") {
-            builder.setScopes("identify", "email")
-        } else {
-            builder.setScopes("email")
-        }
+//        if (provider == "discord") {
+//            builder.setScopes("identify", "email")
+//        } else {
+//            builder.setScopes("email")
+//        }
         builder.setPrompt("select_account")
 
         val authRequest = builder.build()
@@ -194,11 +195,11 @@ internal class WepinLoginMainActivity : ComponentActivity() {
             } else {
                 if (response != null) {
                     Log.d("WepinLoginMainActivity", "provider = $provider")
+
                     when (provider) {
                         "google", "apple" -> token = response.idToken
                         "naver", "discord" -> token = response.accessToken
                     }
-                    Log.d("WepinLoginMainActivity", "activity - token $token")
 
                     val result = token?.let {
                         provider?.let { it1 ->

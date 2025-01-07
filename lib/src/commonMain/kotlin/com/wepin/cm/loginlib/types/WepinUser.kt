@@ -13,7 +13,7 @@ data class UserStatus(
 )
 
 enum class WepinLoginStatus(val value: String) {
-    COMPLETE("completed"),
+    COMPLETE("complete"),
     PIN_REQUIRED("pinRequired"),
     REGISTER_REQUIRED("registerRequired"),
     ;

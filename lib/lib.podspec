@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
     spec.name                     = 'lib'
-    spec.version                  = '0.0.1'
+    spec.version                  = '0.0.10'
     spec.homepage                 = 'https://github.com/WepinWallet/wepin-compose-sdk-login-v1'
     spec.source                   = { :http=> ''}
     spec.authors                  = ''
@@ -49,5 +49,5 @@ Pod::Spec.new do |spec|
             'PRODUCT_MODULE_NAME' => 'lib',
             'FRAMEWORK_SEARCH_PATHS' => '$(inherited) ${PODS_ROOT}/AppAuth'
         }
-    spec.resources = ['build/compose/ios/lib/compose-resources']
+    spec.resources = ['build\compose\ios\lib\compose-resources']
 end

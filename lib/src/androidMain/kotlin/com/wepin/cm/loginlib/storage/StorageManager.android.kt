@@ -78,7 +78,7 @@ actual object StorageManager {
         refreshToken: String,
         providers: Providers,
     ) {
-        deleteAllStorage()
+        deleteAllStorageWithAppId()
         setStorage(
             "firebase:wepin",
             StorageDataType.FirebaseWepin(
@@ -93,7 +93,7 @@ actual object StorageManager {
         request: LoginResult,
         response: LoginResponse,
     ) {
-        deleteAllStorage()
+        deleteAllStorageWithAppId()
         setStorage(
             "firebase:wepin",
             StorageDataType.FirebaseWepin(
@@ -128,12 +128,12 @@ actual object StorageManager {
                 StorageDataType.UserInfo(
                     status = "success",
                     userInfo =
-                        UserInfoDetails(
-                            userId = response.userInfo.userId,
-                            email = response.userInfo.email,
-                            provider = request.provider.value,
-                            use2FA = (response.userInfo.use2FA >= 2),
-                        ),
+                    UserInfoDetails(
+                        userId = response.userInfo.userId,
+                        email = response.userInfo.email,
+                        provider = request.provider.value,
+                        use2FA = (response.userInfo.use2FA >= 2),
+                    ),
                     walletId = response.walletId,
                 ),
             )
@@ -142,12 +142,12 @@ actual object StorageManager {
                 StorageDataType.UserInfo(
                     status = "success",
                     userInfo =
-                        UserInfoDetails(
-                            userId = response.userInfo.userId,
-                            email = response.userInfo.email,
-                            provider = request.provider.value,
-                            use2FA = (response.userInfo.use2FA >= 2),
-                        ),
+                    UserInfoDetails(
+                        userId = response.userInfo.userId,
+                        email = response.userInfo.email,
+                        provider = request.provider.value,
+                        use2FA = (response.userInfo.use2FA >= 2),
+                    ),
                 )
             setStorage("user_info", userInfo)
         }
@@ -165,35 +165,34 @@ actual object StorageManager {
         }
 
         var wepinWallet: String? = null
-        if (walletId != null)
-            {
-                wepinWallet = walletId as String
-            }
+        if (walletId != null) {
+            wepinWallet = walletId as String
+        }
         val wepinUser =
             WepinUser(
                 status = "success",
                 userInfo =
-                    UserInfo(
-                        userId = (userInfo as StorageDataType.UserInfo).userInfo!!.userId,
-                        email = (userInfo as StorageDataType.UserInfo).userInfo!!.email,
-                        provider =
-                            Providers.fromValue(
-                                (userInfo as StorageDataType.UserInfo).userInfo!!.provider.toString(),
-                            )!!,
-                        // Providers.fromValue(params.provider)!!,
-                        use2FA = (userInfo as StorageDataType.UserInfo).userInfo!!.use2FA,
-                    ),
+                UserInfo(
+                    userId = (userInfo as StorageDataType.UserInfo).userInfo!!.userId,
+                    email = (userInfo as StorageDataType.UserInfo).userInfo!!.email,
+                    provider =
+                    Providers.fromValue(
+                        (userInfo as StorageDataType.UserInfo).userInfo!!.provider.toString(),
+                    )!!,
+                    // Providers.fromValue(params.provider)!!,
+                    use2FA = (userInfo as StorageDataType.UserInfo).userInfo!!.use2FA,
+                ),
                 userStatus =
-                    UserStatus(
-                        loginStatus = WepinLoginStatus.fromValue((userStatus as StorageDataType.UserStatus).loginStatus.toString())!!,
-                        pinRequired = (userStatus as StorageDataType.UserStatus).pinRequired,
-                    ),
+                UserStatus(
+                    loginStatus = WepinLoginStatus.fromValue((userStatus as StorageDataType.UserStatus).loginStatus.toString())!!,
+                    pinRequired = (userStatus as StorageDataType.UserStatus).pinRequired,
+                ),
                 walletId = wepinWallet,
                 token =
-                    Token(
-                        accessToken = (wepinToken as StorageDataType.WepinToken).accessToken,
-                        refreshToken = (wepinToken as StorageDataType.WepinToken).refreshToken,
-                    ),
+                Token(
+                    accessToken = (wepinToken as StorageDataType.WepinToken).accessToken,
+                    refreshToken = (wepinToken as StorageDataType.WepinToken).refreshToken,
+                ),
             )
         return wepinUser
     }
@@ -209,19 +208,21 @@ actual object StorageManager {
                     // StorageDataType 처리 로직
                     val stringData = convertLocalStorageDataToJson(data)
                     sharedPreferences.edit().putString(appSpecificKey, stringData)?.apply()
-                    encDataPair =  getEncryptedDataPair(stringData)
+                    encDataPair = getEncryptedDataPair(stringData)
                     sharedPreferences.edit().putString(appSpecificKey, stringData)?.apply()
-                    encDataPair =  getEncryptedDataPair(stringData)
+                    encDataPair = getEncryptedDataPair(stringData)
                     encDataPair.second.toString(UTF_8)
                 }
+
                 is String -> {
                     // String 처리 로직
                     sharedPreferences.edit().putString(appSpecificKey, data)?.apply()
-                    encDataPair =  getEncryptedDataPair(data)
+                    encDataPair = getEncryptedDataPair(data)
                     sharedPreferences.edit().putString(appSpecificKey, data)?.apply()
-                    encDataPair =  getEncryptedDataPair(data)
+                    encDataPair = getEncryptedDataPair(data)
                     encDataPair.second.toString(UTF_8)
                 }
+
                 else -> {
                     throw IllegalArgumentException("Unsupported data type")
                 }
@@ -280,7 +281,7 @@ actual object StorageManager {
 
     actual fun deleteAllIfAppIdDataNotExists() {
         if (!isAppIdDataExists()) {
-            deleteAllStorage()
+            deleteAllStorageWithAppId()
         }
     }
 
@@ -289,6 +290,123 @@ actual object StorageManager {
         sharedPreferenceIds.forEach {
             if (it.key.startsWith(_appId)) {
                 sharedPreferences.edit().remove(it.key).apply()
+            }
+        }
+    }
+
+    actual fun getAllStorage(): Map<String, Any?> {
+        val allData = mutableMapOf<String, Any?>()
+        val sharedPreferenceIds = sharedPreferences.all
+        sharedPreferenceIds.forEach {
+            if (it.key.startsWith(_appId)) {
+                val key = it.key.removePrefix("${_appId}_")
+                allData[key] = getStorage(key)
+            }
+        }
+        return allData
+    }
+
+    actual fun setAllStorage(data: Map<String, Any>) {
+        data.forEach { (key, value) ->
+            when (key) {
+                "firebase:wepin" -> {
+                    if (value is Map<*, *>) {
+                        val idToken = value["idToken"] as? String ?: ""
+                        val refreshToken = value["refreshToken"] as? String ?: ""
+                        val provider = value["provider"] as? String ?: ""
+                        setStorage(
+                            key,
+                            StorageDataType.FirebaseWepin(
+                                idToken = idToken,
+                                refreshToken = refreshToken,
+                                provider = provider
+                            )
+                        )
+                    } else if (value is StorageDataType) {
+                        setStorage(key, value)
+                    }
+                }
+
+                "wepin:connectUser" -> {
+                    if (value is Map<*, *>) {
+                        val accessToken = value["accessToken"] as? String ?: ""
+                        val refreshToken = value["refreshToken"] as? String ?: ""
+                        setStorage(
+                            key,
+                            StorageDataType.WepinToken(
+                                accessToken = accessToken,
+                                refreshToken = refreshToken
+                            )
+                        )
+                    } else if (value is StorageDataType) {
+                        setStorage(key, value)
+                    }
+                }
+
+                "user_id" -> {
+                    if (value is String) {
+                        setStorage(key, value)
+                    }
+                }
+
+                "user_status" -> {
+                    if (value is Map<*, *>) {
+                        val loginStatus = value["loginStatus"] as? String ?: ""
+                        val pinRequired = value["pinRequired"] as? Boolean ?: false
+                        setStorage(
+                            key,
+                            StorageDataType.UserStatus(
+                                loginStatus = loginStatus,
+                                pinRequired = pinRequired
+                            )
+                        )
+                    } else if (value is StorageDataType) {
+                        println("userStatus value: $value")
+                        setStorage(key, value)
+                    }
+                }
+
+                "wallet_id" -> {
+                    if (value is String) {
+                        setStorage(key, value)
+                    }
+                }
+
+                "user_info" -> {
+                    if (value is Map<*, *>) {
+                        val status = value["status"] as? String ?: "success"
+                        val userInfoMap = value["userInfo"] as? Map<*, *>
+                        val userId = userInfoMap?.get("userId") as? String ?: ""
+                        val email = userInfoMap?.get("email") as? String ?: ""
+                        val provider = userInfoMap?.get("provider") as? String ?: ""
+                        val use2FA = userInfoMap?.get("use2FA") as? Boolean ?: false
+                        val walletId = value["walletId"] as? String
+                        val userInfo = UserInfoDetails(userId = userId, email = email, provider = provider, use2FA = use2FA)
+                        setStorage(key, StorageDataType.UserInfo(status = status, userInfo = userInfo, walletId = walletId))
+                    } else if (value is StorageDataType) {
+                        setStorage(key, value)
+                    }
+                }
+
+                "oauth_provider_pending" -> {
+                    if (value is String) {
+                        setStorage(key, value)
+                    }
+                }
+
+                "app_language" -> {
+                    if (value is Map<*, *>) {
+                        val locale = value["locale"] as? String ?: ""
+                        val currency = value["currency"] as? String ?: ""
+                        setStorage(key, StorageDataType.AppLanguage(locale = locale, currency = currency))
+                    } else if (value is StorageDataType) {
+                        setStorage(key, value)
+                    }
+                }
+
+                else -> {
+                    throw IllegalArgumentException("Unsupported key: $key")
+                }
             }
         }
     }

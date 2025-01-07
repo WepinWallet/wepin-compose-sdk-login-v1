@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.compose").apply(false)
     id("com.vanniktech.maven.publish").apply(false)
     id("org.jetbrains.dokka")
-    kotlin("plugin.serialization").version("1.9.10")
+    kotlin("plugin.serialization").version("1.9.23")
 }
 
 tasks.register<Copy>("setUpGitHooks") {

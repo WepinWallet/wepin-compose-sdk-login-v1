@@ -34,7 +34,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        manifestPlaceholders["appAuthRedirectScheme"] = "wepin.d91d31ce2562adfa7bdceb31986ee270"
+        //manifestPlaceholders["appAuthRedirectScheme"] = "wepin.d91d31ce2562adfa7bdceb31986ee270"
+        manifestPlaceholders["appAuthRedirectScheme"] = "wepin.6bf47fc3fbebd80d2792e359e0480f4c"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

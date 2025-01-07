@@ -6,11 +6,11 @@ plugins {
     id("org.jetbrains.compose")
     id("org.jetbrains.dokka")
     id("com.vanniktech.maven.publish")
-    kotlin("plugin.serialization").version("1.9.10")
+    kotlin("plugin.serialization").version("1.9.23")
     kotlin("native.cocoapods")
 }
 
-version = "0.0.1"
+version = "0.0.10"
 
 val buildConfigGenerator by tasks.registering(Sync::class) {
     from(
@@ -52,7 +52,7 @@ kotlin {
     cocoapods {
         summary = "Wepin Login Library"
         homepage = "https://github.com/WepinWallet/wepin-compose-sdk-login-v1"
-        version = "0.0.1"
+        version = "${project.version}"
 
         ios.deploymentTarget = "13.0"
 
@@ -170,11 +170,11 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
 
     signAllPublications()
-    coordinates("io.wepin", "wepin-compose-sdk-login-v1", "0.0.2")
+    coordinates("io.wepin", "wepin-compose-sdk-login-v1", "${project.version}")
 
     pom {
         name.set(project.name)
-        description.set("compose multiplatform login library for Wepin SDk")
+        description.set("compose multiplatform login library for Wepin SDK")
         inceptionYear.set("2024")
         url.set("https://github.com/WepinWallet/wepin-compose-sdk-login-v1")
         licenses {

@@ -36,4 +36,6 @@ expect object StorageManager {
     fun deleteAllIfAppIdDataNotExists()
 
     fun deleteAllStorageWithAppId()
+    fun getAllStorage(): Map<String, Any?>
+    fun setAllStorage(data: Map<String, Any>)
 }

@@ -2,10 +2,13 @@ package com.wepin.cm.loginlib.network
 
 import com.wepin.cm.loginlib.error.WepinError
 import com.wepin.cm.loginlib.types.ErrorCode
+import com.wepin.cm.loginlib.types.GetAccessTokenResponse
 import com.wepin.cm.loginlib.types.KeyType
+import com.wepin.cm.loginlib.types.OAuthProviderInfo
 import com.wepin.cm.loginlib.types.OAuthTokenRequest
 import com.wepin.cm.loginlib.types.OAuthTokenResponse
 import com.wepin.cm.loginlib.types.WepinLoginError
+import com.wepin.cm.loginlib.types.WepinRegex
 import com.wepin.cm.loginlib.types.network.AppInfoResponse
 import com.wepin.cm.loginlib.types.network.CheckEmailExistResponse
 import com.wepin.cm.loginlib.types.network.LoginOauthAccessTokenRequest
@@ -189,12 +192,12 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
         return result
     }
 
-    suspend fun getAccessToken(userId: String): String  {
+    suspend fun getAccessToken(userId: String): GetAccessTokenResponse {
         val result =
             withContext(Dispatchers.IO) {
                 val response = wepinApiService!!.getAccessToken(userId, refreshToken!!)
                 if (response.status == HttpStatusCode.OK) {
-                    val data = response.body<String>()
+                    val data = response.body<GetAccessTokenResponse>()
                     data
                 } else {
                     throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
@@ -211,6 +214,32 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                 true
             } else {
                 false
+            }
+        }
+        return result
+    }
+
+    suspend fun getRegex(): WepinRegex {
+        val result = withContext(Dispatchers.IO) {
+            val response = wepinApiService!!.getRegex()
+            if (response.status == HttpStatusCode.OK) {
+                val data = response.body<WepinRegex.RegexConfig>()
+                WepinRegex(data)
+            } else {
+                throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+            }
+        }
+        return result
+    }
+
+    suspend fun getOAuthProviderInfo(): Array<OAuthProviderInfo> {
+        val result = withContext(Dispatchers.IO) {
+            val response = wepinApiService!!.getOAuthProviderInfoList()
+            if (response.status == HttpStatusCode.OK) {
+                val data = response.body<Array<OAuthProviderInfo>>()
+                data
+            } else {
+                throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
             }
         }
         return result

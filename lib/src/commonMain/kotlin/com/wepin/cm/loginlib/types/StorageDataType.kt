@@ -20,10 +20,10 @@ sealed class StorageDataType {
     data class UserInfo(val status: String, val userInfo: UserInfoDetails?, val walletId: String? = null) : StorageDataType()
 
     @Serializable
-    data class AppLanguage(val locale: Locale, val currency: String?) : StorageDataType()
+    data class AppLanguage(val locale: String, val currency: String? = null) : StorageDataType()
 
     @Serializable
-    data class UserStatus(val loginStatus: String, val pinRequired: Boolean?) : StorageDataType()
+    data class UserStatus(val loginStatus: String, val pinRequired: Boolean? = null) : StorageDataType()
 
     @Serializable
     data class WepinProviderSelectedAddress(val addresses: List<SelectedAddress>) : StorageDataType()

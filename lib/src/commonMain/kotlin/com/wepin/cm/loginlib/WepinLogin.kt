@@ -25,13 +25,19 @@ expect class WepinLogin(wepinLoginOptions: WepinLoginOptions) {
 
     suspend fun loginWithAccessToken(params: LoginOauthAccessTokenRequest): LoginResult
 
-    suspend fun loginWepin(params: LoginResult?): WepinUser
+    suspend fun loginFirebaseWithOauthProvider(params: LoginOauth2Params): LoginResult?
+    suspend fun loginWepinWithOauthProvider(params: LoginOauth2Params): WepinUser?
+    suspend fun loginWepinWithIdToken(params: LoginOauthIdTokenRequest): WepinUser?
+    suspend fun loginWepinWithAccessToken(params: LoginOauthAccessTokenRequest): WepinUser?
+    suspend fun loginWepinWithEmailAndPassword(params: LoginWithEmailParams): WepinUser?
+
+    suspend fun loginWepin(params: LoginResult): WepinUser?
 
     suspend fun logoutWepin(): Boolean
 
     suspend fun getRefreshFirebaseToken(): LoginResult
 
-    suspend fun getCurrentWepinUser(): WepinUser
+    suspend fun getCurrentWepinUser(): WepinUser?
 
     fun getSignForLogin(
         privateKeyHex: String,

@@ -44,7 +44,7 @@ actual object KtorWepinClient {
                 defaultRequest {
                     appDomain?.let { header("X-API-KEY", it) }
                     appKey?.let { header("X-API-DOMAIN", it) }
-                    appKey?.let { header("X-SDK-TYPE", "ios-login") }
+                    appKey?.let { header("X-SDK-TYPE", "compose-login") }
                     version?.let { header("X-SDK-VERSION", it) }
                     url {
                         takeFrom(baseUrl)

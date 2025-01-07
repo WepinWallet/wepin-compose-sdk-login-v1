@@ -29,8 +29,8 @@ After signing up for [Wepin Workspace](https://workspace.wepin.io/), go to the d
 
 ## ⏩ Installation
 val commonMain by getting {
-  implementation("io.wepin:wepin-compose-sdk-login-v1:0.0.2")
-  api("io.wepin:wepin-compose-sdk-login-v1:0.0.2")
+  implementation("io.wepin:wepin-compose-sdk-login-v1:0.0.10")
+  api("io.wepin:wepin-compose-sdk-login-v1:0.0.10")
 }
 
 for iOS
@@ -143,6 +143,12 @@ Add the below line in your app's `AndroidManifest.xml` file
     </dict>
 </array>
 ```
+
+### OAuth Login Provider Setup
+
+If you want to use OAuth login functionality (e.g., loginWithOauthProvider), you need to set up OAuth login providers.
+To do this, you must first register your OAuth login provider information in the [Wepin Workspace](https://workspace.wepin.io/)
+Navigate to the Login tap under the Developer Tools menu, click the App or Set Login Provider button in the Login Provider section, and complete the registration.
 
 ## ⏩ Import
 ```kotlin
@@ -320,7 +326,15 @@ This method is a suspend method, so you can call it within another suspend metho
 #### Parameters
 - `params` \<LoginOauthIdTokenRequest>
   - `token` \<String> - ID token value to be used for login
-  - `sign` \<String> - Signature value for the token provided as the first parameter.(Returned value of [getSignForLogin()](#getSignForLogin))
+  - `sign` \<String> - __optional__ The signature value for the token provided as the first parameter.(Returned value of [getSignForLogin()](#getSignForLogin))
+
+> [!NOTE]
+> Starting from wepin-compose-sdk-login-v1 version 0.0.10, the sign value is optional.
+>
+> If you choose to remove the authentication key issued from the [Wepin Workspace](https://workspace.wepin.io/), you may opt not to use the `sign` value.
+>
+> (Wepin Workspace > Development Tools menu > Login tab > Auth Key > Delete)
+> > The Auth Key menu is visible only if an authentication key was previously generated.
 
 
 #### Returns
@@ -338,11 +352,7 @@ This method is a suspend method, so you can call it within another suspend metho
   ```kotlin
     coroutineScope.launch {
         try {
-            val sign = wepinLogin.getSignForLogin(
-                privateKey,
-                token,
-            )
-            val loginOption = LoginOauthIdTokenRequest(idToken = token, sign = sign)
+            val loginOption = LoginOauthIdTokenRequest(idToken = token)
             val loginResponse = wepinLogin.loginWithIdToken(loginOption)
             setResponse(loginResponse)
             setText("$loginResponse")
@@ -366,8 +376,15 @@ This method is a suspend method, so you can call it within another suspend metho
 - `params` \<LoginOauthAccessTokenRequest>
   - `provider` \<"naver"|"discord"> - Provider that issued the access token
   - `accessToken` \<String> - Access token value to be used for login
-  - `sign` \<String> - Signature value for the token provided as the first parameter. (Returned value of [getSignForLogin()](#getSignForLogin))
+  - `sign` \<String> - __optional__ The signature value for the token provided as the first parameter. (Returned value of [getSignForLogin()](#getSignForLogin))
 
+> [!NOTE]
+> Starting from wepin-compose-sdk-login-v1 version 0.0.10, the sign value is optional.
+>
+> If you choose to remove the authentication key issued from the [Wepin Workspace](https://workspace.wepin.io/), you may opt not to use the `sign` value.
+>
+> (Wepin Workspace > Development Tools menu > Login tab > Auth Key > Delete)
+> > The Auth Key menu is visible only if an authentication key was previously generated.
 
 #### Returns
 - \<LoginResult>
@@ -385,11 +402,7 @@ This method is a suspend method, so you can call it within another suspend metho
   ```kotlin
     coroutineScope.launch {
         try {
-            val sign = wepinLogin.getSignForLogin(
-                privateKey,
-                token
-            )
-            val loginOption = LoginOauthAccessTokenRequest(provider, token, sign)
+            val loginOption = LoginOauthAccessTokenRequest(provider, token)
             val loginResponse = wepinLogin.loginWithAccessToken(loginOption)
             setResponse(loginResponse)
             setText("$loginResponse")
@@ -436,6 +449,287 @@ This method is a suspend method, so you can call it within another suspend metho
   }
   ```
 
+### loginFirebaseWithOauthProvider
+```kotlin
+wepinLogin.loginFirebaseWithOauthProvider(params)
+```
+
+This method combines the functionality of `loginWithOauthProvider`, `loginWithIdToken`, `loginWithAccessToken`.
+It opens an in-app browser to log in to Wepin Firebase through the specified OAuth login provider. Upon successful login, it returns Firebase login information.
+This method is a suspend method, so you can call it within another suspend method or in a coroutine.
+
+### Supported Version
+Supported from version *`0.0.10`* and later.
+
+#### Parameters
+- `params` \<LoginOauth2Params>
+  - `provider` \<'google'|'naver'|'discord'|'apple'> - Provider for login
+  - `clientId` \<String>
+
+
+#### Returns
+- \<LoginResult>
+  - `provider` \<Providers.EXTERNAL_TOKEN>
+  - `token` \<FBToken>
+    - `idToken` \<String> - wepin firebase idToken
+    - `refreshToken` \<String> - wepin firebase refreshToken
+
+#### Exception
+- [Wepin Error](#wepin-error)
+
+#### Example
+- kotlin
+  ```kotlin
+    val loginOption = LoginOauth2Params(
+                        provider = "google",
+                        clientId = "google-client-id",
+                      )
+    coroutineScope.launch { 
+        try {
+            val loginResponse = wepinLogin.loginFirebaseWithOauthProvider(loginOption)
+        } catch (e: Exception) {
+            setResponse(null)
+            setText("fail - $e")
+        }
+    }
+
+  ```
+
+### loginWepinWithOauthProvider
+```kotlin
+wepinLogin.loginWepinWithOauthProvider(params)
+```
+
+This method combines the functionality of `loginFirebaseWithOauthProvider` and `loginWepin`.
+It opens an in-app browser to log in to Wepin through the specified OAuth login provider. Upon successful login, it returns Wepin user information.
+This method is a suspend method, so you can call it within another suspend method or in a coroutine.
+
+> [!CAUTION]
+> This method can only be used after the authentication key has been deleted from the [Wepin Workspace](https://workspace.wepin.io/)
+>
+> (Wepin Workspace > Delvelopment Tools menu > Login tap > Auth Key > Delete)
+> The Auth Key menu is visible only if an authentication key was previously generated.
+
+### Supported Version
+Supported from version *`0.0.10`* and later.
+
+#### Parameters
+- `params` \<LoginOauth2Params>
+  - `provider` \<'google'|'naver'|'discord'|'apple'> - Provider for login
+  - `clientId` \<String>
+
+
+#### Returns
+- \<WepinUser> __optional__ - A promise that resolves to an object containing the user's login status and information. The object includes:
+  - status \<'success'|'fail'>  - The login status.
+  - userInfo \<UserInfo> __optional__ - The user's information, including:
+    - userId \<String> - The user's ID.
+    - email \<String> - The user's email.
+    - provider \<'google'|'apple'|'naver'|'discord'|'email'|'external_token'> - The login provider.
+    - use2FA \<Boolean> - Whether the user uses two-factor authentication.
+  - walletId \<String> = The user's wallet ID.
+  - userStatus: \<UserStatus> - The user's status of wepin login. including:
+    - loginStats: \<'complete' | 'pinRequired' | 'registerRequired'> - If the user's loginStatus value is not complete, it must be registered in the wepin.
+    - pinRequired?: \<Boolean>
+  - token: \<Token> - The user's token of wepin.
+    - accessToken: \<String>
+    - refreshToken \<String>
+
+#### Exception
+- [Wepin Error](#wepin-error)
+
+#### Example
+- kotlin
+  ```kotlin
+    val loginOption = LoginOauth2Params(
+                        provider = "google",
+                        clientId = "google-client-id",
+                      )
+    coroutineScope.launch { 
+        try {
+            val userInfo = wepinLogin.loginWepinWithOauthProvider(loginOption)
+        } catch (e: Exception) {
+            setResponse(null)
+            setText("fail - $e")
+        }
+    }
+
+  ```
+
+### loginWepinWithEmailAndPassword
+```kotlin
+wepinLogin.loginWepinWithEmailAndPassword(params)
+```
+
+This method integrates the functions of `loginWithEmailAndPassword` and `loginWepin`.
+The `loginWepinWithEmailAndPassword` method logs the user into Wepin using the provided email and password. Upon successful login, it returns Wepin user information.
+This method is a suspend method, so you can call it within another suspend method or in a coroutine.
+
+### Supported Version
+Supported from version *`0.0.10`* and later.
+
+#### Parameters
+- `params` \<LoginWithEmailParams>
+  - `email` \<String> - User email
+  - `password` \<String> -  User password
+
+#### Returns
+- \<WepinUser> __optional__ - A promise that resolves to an object containing the user's login status and information. The object includes:
+  - status \<'success'|'fail'>  - The login status.
+  - userInfo \<UserInfo> __optional__ - The user's information, including:
+    - userId \<String> - The user's ID.
+    - email \<String> - The user's email.
+    - provider \<'google'|'apple'|'naver'|'discord'|'email'|'external_token'> - The login provider.
+    - use2FA \<Boolean> - Whether the user uses two-factor authentication.
+  - walletId \<String> = The user's wallet ID.
+  - userStatus: \<UserStatus> - The user's status of wepin login. including:
+    - loginStats: \<'complete' | 'pinRequired' | 'registerRequired'> - If the user's loginStatus value is not complete, it must be registered in the wepin.
+    - pinRequired?: \<Boolean>
+  - token: \<Token> - The user's token of wepin.
+    - accessToken: \<String>
+    - refreshToken \<String>
+
+#### Exception
+- [Wepin Error](#wepin-error)
+
+#### Example
+- kotlin
+  ```kotlin
+    val loginOption = LoginWithEmailParams(email, password)
+    coroutineScope.launch {
+        try {
+            val response = wepinLogin.loginWepinWithEmailAndPassword(loginOption)
+            setResponse(response)
+            setText("$response")
+        } catch (e: Exception) {
+            setText("fail - $e")
+        }
+    }
+  ```
+
+### loginWepinWithIdToken
+```kotlin
+wepinLogin.loginWepinWithIdToken(params)
+```
+
+This method integrates the funcions of `loginWithIdToken` and `loginWepin`.
+The `loginWepinWithIdToken` method logs the user info Wepin using an external ID token. Upon successful login, it returns Wepin user information.
+This method is a suspend method, so you can call it within another suspend method or in a coroutine.
+
+### Supported Version
+Supported from version *`0.0.10`* and later.
+
+#### Parameters
+- `params` \<LoginOauthIdTokenRequest>
+  - `token` \<String> - ID token value to be used for login
+  - `sign` \<String> - __optional__ The signature value for the token provided as the first parameter.(Returned value of [getSignForLogin()](#getSignForLogin))
+
+> [!NOTE]
+> Starting from wepin-compose-sdk-login-v1 version 0.0.10, the sign value is optional.
+>
+> If you choose to remove the authentication key issued from the [Wepin Workspace](https://workspace.wepin.io/), you may opt not to use the `sign` value.
+>
+> (Wepin Workspace > Development Tools menu > Login tab > Auth Key > Delete)
+> > The Auth Key menu is visible only if an authentication key was previously generated.
+
+
+#### Returns
+- \<WepinUser> __optional__ - A promise that resolves to an object containing the user's login status and information. The object includes:
+  - status \<'success'|'fail'>  - The login status.
+  - userInfo \<UserInfo> __optional__ - The user's information, including:
+    - userId \<String> - The user's ID.
+    - email \<String> - The user's email.
+    - provider \<'google'|'apple'|'naver'|'discord'|'email'|'external_token'> - The login provider.
+    - use2FA \<Boolean> - Whether the user uses two-factor authentication.
+  - walletId \<String> = The user's wallet ID.
+  - userStatus: \<UserStatus> - The user's status of wepin login. including:
+    - loginStats: \<'complete' | 'pinRequired' | 'registerRequired'> - If the user's loginStatus value is not complete, it must be registered in the wepin.
+    - pinRequired?: \<Boolean>
+  - token: \<Token> - The user's token of wepin.
+    - accessToken: \<String>
+    - refreshToken \<String>
+
+#### Exception
+- [Wepin Error](#wepin-error)
+
+#### Example
+- kotlin
+  ```kotlin
+    coroutineScope.launch {
+        try {
+            val loginOption = LoginOauthIdTokenRequest(idToken = token)
+            val userInfo = wepinLogin.loginWepinWithIdToken(loginOption)
+        } catch (e: Exception) {
+            setResponse(null)
+            setText("fail - ${e.message}")
+        }
+    }
+
+  ```
+
+### loginWepinWithAccessToken
+```kotlin
+wepinLogin.loginWithAccessToken(params)
+```
+
+This method integrates the functions of `loginWithAccessToken` and `loginWepin`.
+The `loginWepinWithAccessToken` method logs the user into Wepin using an external access token. Upon successful login, it returns Wepin user information.
+This method is a suspend method, so you can call it within another suspend method or in a coroutine.
+
+### Supported Version
+Supported from version *`0.0.10`* and later.
+
+#### Parameters
+- `params` \<LoginOauthAccessTokenRequest>
+  - `provider` \<"naver"|"discord"> - Provider that issued the access token
+  - `accessToken` \<String> - Access token value to be used for login
+  - `sign` \<String> - __optional__ The signature value for the token provided as the first parameter. (Returned value of [getSignForLogin()](#getSignForLogin))
+
+> [!NOTE]
+> Starting from wepin-compose-sdk-login-v1 version 0.0.10, the sign value is optional.
+>
+> If you choose to remove the authentication key issued from the [Wepin Workspace](https://workspace.wepin.io/), you may opt not to use the `sign` value.
+>
+> (Wepin Workspace > Development Tools menu > Login tab > Auth Key > Delete)
+> > The Auth Key menu is visible only if an authentication key was previously generated.
+
+#### Returns
+- \<WepinUser> __optional__ - A promise that resolves to an object containing the user's login status and information. The object includes:
+  - status \<'success'|'fail'>  - The login status.
+  - userInfo \<UserInfo> __optional__ - The user's information, including:
+    - userId \<String> - The user's ID.
+    - email \<String> - The user's email.
+    - provider \<'google'|'apple'|'naver'|'discord'|'email'|'external_token'> - The login provider.
+    - use2FA \<Boolean> - Whether the user uses two-factor authentication.
+  - walletId \<String> = The user's wallet ID.
+  - userStatus: \<UserStatus> - The user's status of wepin login. including:
+    - loginStats: \<'complete' | 'pinRequired' | 'registerRequired'> - If the user's loginStatus value is not complete, it must be registered in the wepin.
+    - pinRequired?: \<Boolean>
+  - token: \<Token> - The user's token of wepin.
+    - accessToken: \<String>
+    - refreshToken \<String>
+
+
+#### Exception
+- [Wepin Error](#wepin-error)
+
+#### Example
+- kotlin
+  ```kotlin
+    coroutineScope.launch {
+        try {
+            val loginOption = LoginOauthAccessTokenRequest(provider, token)
+            val userInfo = wepinLogin.loginWepinWithAccessToken(loginOption)
+            setResponse(userInfo)
+            setText("$userInfo")
+        } catch (e: Exception) {
+            setResponse(null)
+            setText("fail - ${e.message}")
+        }
+    }
+
+  ```
+
 ### loginWepin
 ```kotlin
 wepinLogin.loginWepin(param)
@@ -454,7 +748,7 @@ The parameters should utilize the return values from the `loginWithEmailAndPassw
     - `refreshToken` \<String> - Wepin Firebase refreshToken
 
 #### Returns
-- \<WepinUser> - A promise that resolves to an object containing the user's login status and information. The object includes:
+- \<WepinUser> __optional__ - A promise that resolves to an object containing the user's login status and information. The object includes:
   - status \<'success'|'fail'>  - The login status.
   - userInfo \<UserInfo> __optional__ - The user's information, including:
     - userId \<String> - The user's ID.
@@ -497,7 +791,7 @@ This method is a suspend method, so you can call it within another suspend metho
 - void
 
 #### Returns
-- \<WepinUser> - A promise that resolves to an object containing the user's login status and information. The object includes:
+- \<WepinUser> __optional__ - A promise that resolves to an object containing the user's login status and information. The object includes:
   - status \<'success'|'fail'>  - The login status.
   - userInfo \<UserInfo> __optional__ - The user's information, including:
     - userId \<String> - The user's ID.

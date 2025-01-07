@@ -45,31 +45,40 @@ class LoginHelper(
         email: String,
         password: String,
     ): LoginResult {
-        StorageManager.deleteAllStorage()
+        println("yskim_test : " + email + " || " + password)
+        wepinLoginManager.wepinNetworkManager?.clearAuthToken()
+        StorageManager.deleteAllStorageWithAppId()
 
         var response: PasswordStateResponse? = null
         try {
             response = wepinLoginManager.wepinNetworkManager?.getUserPasswordState(email)
+            println("yskim_test response :  " + response)
         } catch (e: Exception) {
 //            println("userPWState: " + e.toString())
 //            println("userPWState: " + e.message.toString())
 //            println("userPWState: " + isFirstEmailUser(e.message.toString()).toString())
 //            println("userPWState: " + (!e.message?.contains("not exist")!! || !e.message?.contains("400")!!).toString())
             if (!isFirstEmailUser(e.message.toString())) {
+                println("yskim_test isFirstEmailUser :  " + e.message.toString())
                 throw e
             }
         }
         val encryptedPassword = hashPassword(password)
+        println("yskim_test encryptedPassword :  " + encryptedPassword)
         val isChangeRequired =
             if (response!!.isPasswordResetRequired) {
+                println("yskim_test return true  ")
                 true
             } else {
+                println("yskim_test return flase  ")
                 false
             }
 
         val firstPw = if (isChangeRequired) password else encryptedPassword
+        println("yskim_test firstPw : " + firstPw)
         var firebaseRes: SignInResponse? = null
         runBlocking {
+            println("yskim_test runBlocking start ")
             firebaseRes =
                 wepinLoginManager.wepinFirebaseManager?.signInWithEmailPassword(
                     EmailAndPasswordRequest(
@@ -77,12 +86,14 @@ class LoginHelper(
                         password = firstPw,
                     ),
                 )
+            println("yskim_test runBlocking end")
         }
-
+        println("yskim_test firebaseRes :  " + firebaseRes)
         val idToken: String = firebaseRes!!.idToken
         val refreshToken: String = firebaseRes!!.refreshToken
 
         if (isChangeRequired) {
+            println("yskim_test isChangeRequired")
             val changePasswordRes =
                 changePassword(encryptedPassword, FBToken(idToken, refreshToken))
             StorageManager.setFirebaseUser(
@@ -95,6 +106,7 @@ class LoginHelper(
                 token = changePasswordRes,
             )
         } else {
+            println("yskim_test return")
             return LoginResult(
                 provider = Providers.EMAIL,
                 token = FBToken(idToken, refreshToken),
@@ -257,9 +269,9 @@ class LoginHelper(
             throw WepinError.FAILED_PASSWORD_SETTING
         } else {
             try {
-                val verifyResponse =
+                val verifyEmailResponse =
                     wepinLoginManager.wepinFirebaseManager!!.verifyEmail(VerifyEmailRequest(oobCode = verifyResponse.oobVerify!!))
-                if (verifyResponse.email.trim().lowercase() !== params.email.trim()) {
+                if (verifyEmailResponse.email.trim().lowercase() !== params.email.trim()) {
                     throw WepinError.FAILED_EMAIL_VERIFIED
                 } else {
                     return loginWithEmailAndResetPasswordState(params.email, params.password)

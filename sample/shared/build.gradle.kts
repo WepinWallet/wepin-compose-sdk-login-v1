@@ -2,7 +2,7 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
-    kotlin("native.cocoapods")
+//    kotlin("native.cocoapods")
 }
 
 kotlin {
@@ -19,24 +19,24 @@ kotlin {
         }
     }
 
-    cocoapods {
-        summary = "Some description for a Kotlin/Native module"
-        homepage = "Link to a Kotlin/Native module homepage"
-        ios.deploymentTarget = "13.0"
-        version = "0.0.1"
-
-        pod("AppAuth") {
-            version = "~> 1.7.5"
-        }
-
-        pod("secp256k1") {
-            version = "~> 0.1.0"
-        }
-
-        pod("JFBCrypt") {
-            version = "~> 0.1"
-        }
-    }
+//    cocoapods {
+//        summary = "Some description for a Kotlin/Native module"
+//        homepage = "Link to a Kotlin/Native module homepage"
+//        ios.deploymentTarget = "13.0"
+//        version = "0.0.1"
+//
+//        pod("AppAuth") {
+//            version = "~> 1.7.5"
+//        }
+//
+//        pod("secp256k1") {
+//            version = "~> 0.1.0"
+//        }
+//
+//        pod("JFBCrypt") {
+//            version = "~> 0.1"
+//        }
+//    }
 
     sourceSets {
         val commonMain by getting {
@@ -46,8 +46,9 @@ kotlin {
                 implementation(compose.material)
                 @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
                 implementation(compose.components.resources)
-                implementation("io.wepin:wepin-compose-sdk-login-v1:0.0.2")
-                api("io.wepin:wepin-compose-sdk-login-v1:0.0.2")
+//                implementation("io.wepin:wepin-compose-sdk-login-v1:0.0.2")
+                api(project(":lib"))
+//                api("io.wepin:wepin-compose-sdk-login-v1:0.0.2")
             }
         }
         val androidMain by getting {

@@ -54,6 +54,9 @@ interface WepinApiService {
     ): HttpResponse
 
     suspend fun logout(accessToken: String?, userId: String): HttpResponse
+
+    suspend fun getRegex(): HttpResponse
+    suspend fun getOAuthProviderInfoList(): HttpResponse
 }
 
 fun createWepinApiService(okHttpClient: HttpClient): WepinApiService =
@@ -150,6 +153,14 @@ fun createWepinApiService(okHttpClient: HttpClient): WepinApiService =
                     append("Authorization", "Bearer $accessToken")
                 }
             }
+        }
+
+        override suspend fun getRegex(): HttpResponse {
+            return okHttpClient.get("user/regex")
+        }
+
+        override suspend fun getOAuthProviderInfoList(): HttpResponse {
+            return okHttpClient.get("user/oauth-provider")
         }
     }
 

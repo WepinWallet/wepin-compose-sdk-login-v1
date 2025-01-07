@@ -1,6 +1,7 @@
-rootProject.name = "Sample Login Library"
+rootProject.name = "SampleLoginLib"
 
 include(":sample:androidApp")
+include(":lib")
 include(":sample:shared")
 
 pluginManagement {
