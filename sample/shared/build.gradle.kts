@@ -2,7 +2,8 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
-//    kotlin("native.cocoapods")
+    id("org.jetbrains.kotlin.plugin.compose")
+    kotlin("native.cocoapods")
 }
 
 kotlin {
@@ -19,24 +20,26 @@ kotlin {
         }
     }
 
-//    cocoapods {
-//        summary = "Some description for a Kotlin/Native module"
-//        homepage = "Link to a Kotlin/Native module homepage"
-//        ios.deploymentTarget = "13.0"
-//        version = "0.0.1"
-//
-//        pod("AppAuth") {
-//            version = "~> 1.7.5"
-//        }
-//
-//        pod("secp256k1") {
-//            version = "~> 0.1.0"
-//        }
-//
-//        pod("JFBCrypt") {
-//            version = "~> 0.1"
-//        }
-//    }
+    cocoapods {
+        summary = "Some description for a Kotlin/Native module"
+        homepage = "Link to a Kotlin/Native module homepage"
+        ios.deploymentTarget = "13.0"
+        version = "0.0.1"
+
+        pod("AppAuth") {
+            version = "~> 1.7.5"
+        }
+
+        pod("secp256k1") {
+            version = "~> 0.1.0"
+        }
+
+        pod("JFBCrypt") {
+            version = "~> 0.1"
+        }
+
+        podfile = project.file("../iosApp/Podfile")
+    }
 
     sourceSets {
         val commonMain by getting {
@@ -46,8 +49,7 @@ kotlin {
                 implementation(compose.material)
                 @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
                 implementation(compose.components.resources)
-//                implementation("io.wepin:wepin-compose-sdk-login-v1:0.0.2")
-                api(project(":lib"))
+                implementation("io.wepin:wepin-compose-sdk-login-v1:1.0.0")
 //                api("io.wepin:wepin-compose-sdk-login-v1:0.0.2")
             }
         }
@@ -84,7 +86,6 @@ android {
     defaultConfig {
         minSdk = (findProperty("android.minSdk") as String).toInt()
 
-        manifestPlaceholders["appAuthRedirectScheme"] = "wepin.d91d31ce2562adfa7bdceb31986ee270"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

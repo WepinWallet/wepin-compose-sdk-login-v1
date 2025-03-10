@@ -8,7 +8,7 @@ Pod::Spec.new do |spec|
     spec.summary                  = 'Some description for a Kotlin/Native module'
     spec.vendored_frameworks      = 'build/cocoapods/framework/shared.framework'
     spec.libraries                = 'c++'
-    spec.ios.deployment_target = '13.0'
+    spec.ios.deployment_target    = '13.0'
     spec.dependency 'AppAuth', '~> 1.7.5'
     spec.dependency 'JFBCrypt', '~> 0.1'
     spec.dependency 'secp256k1', '~> 0.1.0'
@@ -23,6 +23,10 @@ Pod::Spec.new do |spec|
 
         Alternatively, proper pod installation is performed during Gradle sync in the IDE (if Podfile location is set)"
     end
+                
+    spec.xcconfig = {
+        'ENABLE_USER_SCRIPT_SANDBOXING' => 'NO',
+    }
                 
     spec.pod_target_xcconfig = {
         'KOTLIN_PROJECT_PATH' => ':sample:shared',
@@ -48,5 +52,5 @@ Pod::Spec.new do |spec|
             SCRIPT
         }
     ]
-    spec.resources = ['build/compose/ios/shared/compose-resources']
+    spec.resources = ['build/compose/cocoapods/compose-resources']
 end

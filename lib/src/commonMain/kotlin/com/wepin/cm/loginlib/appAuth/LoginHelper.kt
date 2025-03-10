@@ -2,7 +2,7 @@ package com.wepin.cm.loginlib.appAuth
 
 import com.wepin.cm.loginlib.error.WepinError
 import com.wepin.cm.loginlib.manager.WepinLoginManager
-import com.wepin.cm.loginlib.storage.StorageManager
+import com.wepin.cm.loginlib.storage.WepinStorageManager
 import com.wepin.cm.loginlib.types.FBToken
 import com.wepin.cm.loginlib.types.LoginOauthResult
 import com.wepin.cm.loginlib.types.LoginResult
@@ -23,8 +23,6 @@ import com.wepin.cm.loginlib.types.network.firebase.SignInResponse
 import com.wepin.cm.loginlib.types.network.firebase.VerifyEmailRequest
 import com.wepin.cm.loginlib.utils.hashPassword
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
 
 class LoginHelper(
     private val wepinLoginManager: WepinLoginManager,
@@ -45,40 +43,31 @@ class LoginHelper(
         email: String,
         password: String,
     ): LoginResult {
-        println("yskim_test : " + email + " || " + password)
         wepinLoginManager.wepinNetworkManager?.clearAuthToken()
-        StorageManager.deleteAllStorageWithAppId()
+        WepinStorageManager.deleteAllStorage()
 
         var response: PasswordStateResponse? = null
         try {
             response = wepinLoginManager.wepinNetworkManager?.getUserPasswordState(email)
-            println("yskim_test response :  " + response)
         } catch (e: Exception) {
 //            println("userPWState: " + e.toString())
 //            println("userPWState: " + e.message.toString())
 //            println("userPWState: " + isFirstEmailUser(e.message.toString()).toString())
 //            println("userPWState: " + (!e.message?.contains("not exist")!! || !e.message?.contains("400")!!).toString())
-            if (!isFirstEmailUser(e.message.toString())) {
-                println("yskim_test isFirstEmailUser :  " + e.message.toString())
-                throw e
-            }
+            if (e is WepinError) throw e
+            throw WepinError.generalUnKnownEx(e.toString())
         }
         val encryptedPassword = hashPassword(password)
-        println("yskim_test encryptedPassword :  " + encryptedPassword)
         val isChangeRequired =
             if (response!!.isPasswordResetRequired) {
-                println("yskim_test return true  ")
                 true
             } else {
-                println("yskim_test return flase  ")
                 false
             }
 
         val firstPw = if (isChangeRequired) password else encryptedPassword
-        println("yskim_test firstPw : " + firstPw)
         var firebaseRes: SignInResponse? = null
         runBlocking {
-            println("yskim_test runBlocking start ")
             firebaseRes =
                 wepinLoginManager.wepinFirebaseManager?.signInWithEmailPassword(
                     EmailAndPasswordRequest(
@@ -86,17 +75,15 @@ class LoginHelper(
                         password = firstPw,
                     ),
                 )
-            println("yskim_test runBlocking end")
         }
-        println("yskim_test firebaseRes :  " + firebaseRes)
+
         val idToken: String = firebaseRes!!.idToken
         val refreshToken: String = firebaseRes!!.refreshToken
 
         if (isChangeRequired) {
-            println("yskim_test isChangeRequired")
             val changePasswordRes =
                 changePassword(encryptedPassword, FBToken(idToken, refreshToken))
-            StorageManager.setFirebaseUser(
+            WepinStorageManager.setFirebaseUser(
                 changePasswordRes!!.idToken,
                 changePasswordRes.refreshToken,
                 Providers.EMAIL,
@@ -106,33 +93,10 @@ class LoginHelper(
                 token = changePasswordRes,
             )
         } else {
-            println("yskim_test return")
             return LoginResult(
                 provider = Providers.EMAIL,
                 token = FBToken(idToken, refreshToken),
             )
-        }
-    }
-
-    fun isFirstEmailUser(errorString: String): Boolean {
-        val jsonString = errorString.substringAfter("java.lang.Exception: ")
-
-        try {
-            // JSON 파싱
-            val jsonObject = Json.parseToJsonElement(jsonString).jsonObject
-
-            // 필요한 필드 값 추출
-            val status = jsonObject.get("status") as Int
-            val message = jsonObject.get("message") as String
-
-            // 조건 검사
-            val isStatus400 = (status == 400)
-            val isMessageContainsNotExist = message.contains("not exist")
-
-            // 결과 출력
-            return isStatus400 && isMessageContainsNotExist
-        } catch (e: Exception) {
-            return false
         }
     }
 
@@ -171,7 +135,7 @@ class LoginHelper(
         type: Providers,
     ): LoginResult {
         val signInResponse = wepinLoginManager.wepinFirebaseManager?.signInWithCustomToken(token)
-        StorageManager.setFirebaseUser(signInResponse!!.idToken, signInResponse.refreshToken, type)
+        WepinStorageManager.setFirebaseUser(signInResponse!!.idToken, signInResponse.refreshToken, type)
         return LoginResult(type, FBToken(signInResponse.idToken, signInResponse.refreshToken))
     }
 
@@ -217,7 +181,8 @@ class LoginHelper(
             )
             return FBToken(updatePasswordRes!!.idToken, updatePasswordRes.refreshToken)
         } catch (e: Exception) {
-            throw e
+            if (e is WepinError) throw e
+            throw WepinError.generalUnKnownEx(e.toString())
         }
     }
 

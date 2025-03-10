@@ -20,9 +20,9 @@ class LoginManager(
     context: Any
 ) {
     var loginResult: LoginResult? by mutableStateOf(null)
-    private val appId = "6bf47fc3fbebd80d2792e359e0480f4c"
-    private val appKey = "ak_dev_7zgBD2Oo5p2AfHKzU6xaEbSWU4XgknIVZgtj6PhWMYn"
-    private val privateKey = "f4de6c55a8199107baf4afa95be40456688814bfc723ea2f22bb24675fcdf730"
+    private val appId = "WEPIN_APP_ID"
+    private val appKey = "WEPIN_APP_KEY"
+    private val privateKey = "WEPIN_APP_PRIVATE_KEY"
     private val initOptions = WepinLoginOptions(
         context = context,
         appId = appId,
@@ -109,7 +109,6 @@ class LoginManager(
         coroutineScope.launch {
             try {
                 val loginResponse = wepinLogin.loginWithOauthProvider(loginOption)
-                println("yskim_test idToken ${loginResponse.token}");
                 when (tokenType) {
                     OauthTokenType.ID_TOKEN -> {
                         loginIdToken(
@@ -231,7 +230,7 @@ class LoginManager(
             try {
                 setText("Processing...")
                 var clientId: String? = null
-                if (provider == "google") clientId = "1006602884997-ti7v6ldm1obtu209uousvfkh2e58klf6.apps.googleusercontent.com"
+                if (provider == "google") clientId = "GOOGLE_CLIENT_ID"
                 else if (provider == "discord") clientId = "DISCORD_CLIENT_ID"
                 else if (provider == "naver") clientId = "NAVER_CLIENT_ID"
                 else if (provider == "apple") clientId = "APPLE_SERVICE_ID"
@@ -250,7 +249,7 @@ class LoginManager(
             try {
                 setText("Processing...")
                 var clientId: String? = null
-                if (provider == "google") clientId = "1006602884997-ti7v6ldm1obtu209uousvfkh2e58klf6.apps.googleusercontent.com"
+                if (provider == "google") clientId = "GOOGLE_CLIENT_ID"
                 else if (provider == "discord") clientId = "DISCORD_CLIENT_ID"
                 else if (provider == "naver") clientId = "NAVER_CLIENT_ID"
                 else if (provider == "apple") clientId = "APPLE_SERVICE_ID"
@@ -313,7 +312,7 @@ class LoginManager(
             }
             "Login Wepin with IdToken" -> {
                 loginOauth(provider = "google",
-                    clientId = "1006602884997-ti7v6ldm1obtu209uousvfkh2e58klf6.apps.googleusercontent.com",
+                    clientId = "GOOGLE_CLIENT_ID",
                     tokenType = OauthTokenType.ID_TOKEN,
                     true,
                     coroutineScope = coroutineScope,
@@ -333,9 +332,8 @@ class LoginManager(
             }
             "Login Wepin with Email And Password" -> {
                 loginWithEmail(
-                    email = "yiriysk@gmail.com",
-                    //email = "yskim@iotrust.kr",
-                    password = "wepintest1019!",
+                    email = "email",
+                    password = "password",
                     true,
                     coroutineScope = coroutineScope,
                     setResponse = setResponse,
@@ -343,27 +341,16 @@ class LoginManager(
                 )
             }
             "Email Signup" -> signupWithEmail(
-                email = "yiriysk@gmail.com",
-                //email = "tysust95@gmail.com",
-                //email = "ystest976@gmail.com",
-                password = "wepintest1019!",
-//                email = "yskim@iotrust.kr",
-//                password = "wepintest1019!",
+                email = "email",
+                password = "password",
                 coroutineScope = coroutineScope,
                 setResponse = setResponse,
                 setText = setText,
             )
 
             "Email Login" -> loginWithEmail(
-                email = "yiriysk@gmail.com",
-                //email = "tysust95@gmail.com",
-                //email = "ystest976@gmail.com",
-                //password = "wepintest1019!",
-                password = "wepintest1019!!!!!",
-//                email = "yskim@iotrust.kr",
-//                password = "wepintest1019!",
-//                email = "js.hong@iotrust.kr",
-//                password = "doublebk13!@",
+                email = "email",
+                password = "password",
                 false,
                 coroutineScope = coroutineScope,
                 setResponse = setResponse,
@@ -372,7 +359,7 @@ class LoginManager(
 
             "Oauth Login(Google)" -> loginOauth(
                 provider = "google",
-                clientId = "1006602884997-ti7v6ldm1obtu209uousvfkh2e58klf6.apps.googleusercontent.com",
+                clientId = "GOOGLE_WEB_CLIENT_ID",
                 tokenType = OauthTokenType.ID_TOKEN,
                 false,
                 coroutineScope = coroutineScope,
@@ -412,8 +399,7 @@ class LoginManager(
 
             "IdToken Login" -> {
                 setText("isProcessing")
-                //val token = "IdToken"
-                val token = "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijg5Y2UzNTk4YzQ3M2FmMWJkYTRiZmY5NWU2Yzg3MzY0NTAyMDZmYmEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIxMDA2NjAyODg0OTk3LXRpN3Y2bGRtMW9idHUyMDl1b3VzdmZraDJlNThrbGY2LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwiYXVkIjoiMTAwNjYwMjg4NDk5Ny10aTd2NmxkbTFvYnR1MjA5dW91c3Zma2gyZTU4a2xmNi5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsInN1YiI6IjEwMDc1NjE3MjA4MjIzMTY3OTA5OSIsImhkIjoiaW90cnVzdC5rciIsImVtYWlsIjoieXNraW1AaW90cnVzdC5rciIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJhdF9oYXNoIjoiVFBLeUhzNXMxT0J6eEdMeldPaGxKQSIsIm5vbmNlIjoiRHRtdWNqR2dGSng2b2pDRl9ZcEtvdyIsIm5hbWUiOiLquYDsmIHsg4EiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTDRycUxTRUFzSHpISEFFTTJKdEZPZWkzdkJJZ21DSDNxNGM2NnNiQi03Y1h6ZlNnPXM5Ni1jIiwiZ2l2ZW5fbmFtZSI6IuyYgeyDgSIsImZhbWlseV9uYW1lIjoi6rmAIiwiaWF0IjoxNzM2MTM0MDE5LCJleHAiOjE3MzYxMzc2MTl9.FNzAU6jaCpPXFZSUJ_6ckYYh6__4fXNQNGFhy5v6WTjNPU5HdmEybVTom299sAhFscVHjokLGAuKhdicXvEriQprM4A8Etd-upCAhR0OZVbq3c6uWAU1GhvoIi_nq4DMXUefn0Je2ZFZ26SLhGNDFN_5OojREJ3rNepV6c2RjwjTwh3jABfwfi7bzprawLjsGO3tTZrC3cojFsTVkUzXuHnKeDjyw3G2BWrDUfuHH2D3R0Nn49BYNS-o-duTqgtTY2LLA0HzswvWDVL31JymDe0qZ7hQTmUcfHzqI4ka6zLIyNqOnCCfzt8on-U1TnNeNtmi1FmoeRGaRy3IphxpmQ" // yskim@iotrust.kr
+                val token = "IdToken"
                 loginIdToken(
                     token = token,
                     false,

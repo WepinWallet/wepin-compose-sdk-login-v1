@@ -4,13 +4,14 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.dokka")
     id("com.vanniktech.maven.publish")
-    kotlin("plugin.serialization").version("1.9.23")
+    kotlin("plugin.serialization")
     kotlin("native.cocoapods")
 }
 
-version = "0.0.10"
+version = "1.0.0"
 
 val buildConfigGenerator by tasks.registering(Sync::class) {
     from(

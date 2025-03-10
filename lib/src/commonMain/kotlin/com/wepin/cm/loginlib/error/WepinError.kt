@@ -70,6 +70,7 @@ class WepinError : Exception {
         val FAILED_PASSWORD_SETTING = WepinError.generalEx(ErrorCode.FAILED_PASSWORD_SETTING)
         val EXISTED_EMAIL = WepinError.generalEx(ErrorCode.EXISTED_EMAIL)
         val ALREADY_LOGOUT = WepinError.generalEx(ErrorCode.ALREADY_LOGOUT)
+        val API_REQUEST_ERROR = WepinError.generalEx(ErrorCode.API_REQUEST_ERROR)
 
         private fun generalEx(errorDescription: ErrorCode): WepinError {
             return WepinError(WepinLoginError.getError(errorDescription))

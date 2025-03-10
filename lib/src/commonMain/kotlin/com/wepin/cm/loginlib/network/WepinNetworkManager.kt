@@ -92,7 +92,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                     val data: CheckEmailExistResponse = response.body()
                     data
                 } else {
-                    throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -106,7 +106,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                     val data: PasswordStateResponse = response.body()
                     data
                 } else {
-                    throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -121,7 +121,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
 
                     data
                 } else {
-                    throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
                 }
             }
         accessToken = result.token.access
@@ -138,7 +138,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                     if (!data.result) throw WepinError.generalUnKnownEx("loginOAuthIdToken result fail")
                     data
                 } else {
-                    throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -152,7 +152,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                     val data = response.body<LoginOauthIdTokenResponse>()
                     data
                 } else {
-                    throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -169,7 +169,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                     val data = response.body<PasswordStateResponse>()
                     data
                 } else {
-                    throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -186,7 +186,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                     val data = response.body<OAuthTokenResponse>()
                     data
                 } else {
-                    throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -200,7 +200,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                     val data = response.body<GetAccessTokenResponse>()
                     data
                 } else {
-                    throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -226,7 +226,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                 val data = response.body<WepinRegex.RegexConfig>()
                 WepinRegex(data)
             } else {
-                throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
             }
         }
         return result
@@ -239,7 +239,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                 val data = response.body<Array<OAuthProviderInfo>>()
                 data
             } else {
-                throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
             }
         }
         return result
@@ -252,7 +252,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
                 val data = response.body<VerifyResponse>()
                 data
             } else {
-                throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.value}, body: ${response.bodyAsText()}")
             }
         }
         return result
@@ -286,7 +286,7 @@ class WepinNetworkManager(appKey: String, domain: String, version: String) {
             }
 
             else -> {
-                throw Exception(WepinLoginError.getError(ErrorCode.INVALID_APP_KEY))
+                throw WepinError.INVALID_APP_KEY
             }
         }
     }

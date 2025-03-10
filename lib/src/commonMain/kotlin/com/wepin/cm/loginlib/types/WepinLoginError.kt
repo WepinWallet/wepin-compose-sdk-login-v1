@@ -72,6 +72,9 @@ object WepinLoginError {
             ErrorCode.EXISTED_EMAIL -> {
                 "Email already exists"
             }
+            ErrorCode.API_REQUEST_ERROR -> {
+                "API Request Error"
+            }
 //            ErrorCode.NOUSERFOUND -> {
 //                "No user found, please login again!"
 //            }
@@ -122,6 +125,7 @@ enum class ErrorCode {
     FAILED_EMAIL_VERIFIED,
     FAILED_PASSWORD_SETTING,
     EXISTED_EMAIL,
+    API_REQUEST_ERROR
 //    ENCODING_ERROR,
 //    DECODING_ERROR,
 //    RUNTIME_ERROR,

@@ -1,5 +1,6 @@
 package com.wepin.cm.loginlib.network
 
+import com.wepin.cm.loginlib.error.WepinError
 import com.wepin.cm.loginlib.types.network.firebase.EmailAndPasswordRequest
 import com.wepin.cm.loginlib.types.network.firebase.GetRefreshIdTokenRequest
 import com.wepin.cm.loginlib.types.network.firebase.GetRefreshIdTokenResponse
@@ -41,10 +42,10 @@ class WepinFirebaseManager(firebaseKey: String) {
                     val data = response.body<GetRefreshIdTokenSuccess>()
                     data
                 } catch (e: Exception) {
-                    throw Exception("invalid response")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
                 }
             } else {
-                throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
             }
         }
         return result
@@ -58,10 +59,10 @@ class WepinFirebaseManager(firebaseKey: String) {
                     val data = response.body<VerifyEmailResponse>()
                     data
                 } catch (e: Exception) {
-                    throw Exception("invalid response")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
                 }
             } else {
-                throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
             }
         }
         return result
@@ -75,7 +76,7 @@ class WepinFirebaseManager(firebaseKey: String) {
                 try {
                     response.body<SignInResponse>()
                 } catch (e: Exception) {
-                    throw Exception("invalid response")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -92,7 +93,7 @@ class WepinFirebaseManager(firebaseKey: String) {
                     val data = response.body<UpdatePasswordSuccess>()
                     data
                 } catch (e: Exception) {
-                    throw Exception("invalid response")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -106,7 +107,7 @@ class WepinFirebaseManager(firebaseKey: String) {
                     val data = response.body<SignInWithCustomTokenSuccess>()
                     data
                 } catch (e: Exception) {
-                    throw Exception("invalid response")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
                 }
             }
         return result
@@ -120,10 +121,10 @@ class WepinFirebaseManager(firebaseKey: String) {
                     val data = response.body<ResetPasswordResponse>()
                     data
                 } catch (e: Exception) {
-                    throw Exception("invalid response")
+                    throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
                 }
             } else {
-                throw Exception("HTTP ${response.status.value}: ${response.bodyAsText()}")
+                throw WepinError(WepinError.API_REQUEST_ERROR.code, "code: ${response.status.copy()}, body: ${response.bodyAsText()}")
             }
         }
         return result

@@ -8,6 +8,8 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import com.wepin.cm.loginlib.error.WepinError
+import com.wepin.cm.loginlib.error.getOauthErrorCode
+import com.wepin.cm.loginlib.error.getOauthErrorMessage
 import com.wepin.cm.loginlib.manager.WepinLoginManager
 import com.wepin.cm.loginlib.types.ErrorCode
 import com.wepin.cm.loginlib.types.OAuthProviderInfo
@@ -135,9 +137,10 @@ internal class WepinLoginMainActivity : ComponentActivity() {
 //                        authState = AuthState()
                 Log.d("WepinLoginMainActivity", "provider exception = ${ex.message}")
 
-                val message = ex.message ?: ex.errorDescription ?: "unknown"
+                val code = getOauthErrorCode(ex, "authorization_fail")
+                val message = getOauthErrorMessage(ex)
                 wepinLoginManager.loginResultManager!!.loginOauthCompletableFuture.completeExceptionally(
-                    WepinError.generalUnKnownEx(message),
+                    WepinError(WepinError.FAILED_LOGIN.code, "$code - $message"),
                 )
             } else if (resp == null)
                 {
@@ -189,9 +192,10 @@ internal class WepinLoginMainActivity : ComponentActivity() {
             if (exception != null) {
 //                        authState = AuthState()
                 Log.d("WepinLoginMainActivity", "provider exception = ${exception.message}")
-                val message = exception.message ?: "unknown"
+                val code = getOauthErrorCode(exception, "token_auth_error")
+                val message = getOauthErrorMessage(exception)
 //                wepinLoginManager.loginHelper?.onWepinOauthLoginError(null, message)
-                throw Exception(message)
+                throw WepinError(WepinError.FAILED_LOGIN.code, "$code - $message")
             } else {
                 if (response != null) {
                     Log.d("WepinLoginMainActivity", "provider = $provider")
